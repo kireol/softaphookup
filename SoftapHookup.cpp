@@ -22,6 +22,7 @@ void SoftapHookup::start() {
             softapServer();
             break;
         case SH_MODE_CONNECTING:
+            connectToRemoteWifi();
             break;
         case SH_MODE_CONNECTED:
             break;
@@ -30,13 +31,30 @@ void SoftapHookup::start() {
     }
 }
 
+void SoftapHookup::connectToRemoteWifi(){
+  Serial.print("Connecting to network ");
+  Serial.print( String(remoteSsid));
+  Serial.print(" with password ");
+  Serial.print(String(remotePassword));
+  Serial.println(".");
+  WiFi.begin(remoteSsid, remotePassword);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.print("Connected! IP address: ");
+  Serial.println(WiFi.localIP());
+  currentMode = SH_MODE_CONNECTED;
+}
+
 void SoftapHookup::softapServer() {
     server->handleClient();
 }
 
 void SoftapHookup::setupWiFi() {
     Serial.println("in setupWiFi");
-    WiFi.mode(WIFI_AP_STA);
+//    WiFi.mode(WIFI_AP_STA);
 
     uint8_t mac[WL_MAC_ADDR_LENGTH];
     WiFi.softAPmacAddress(mac);
@@ -75,6 +93,7 @@ String SoftapHookup::getHTMLFooter() {
 }
 
 void SoftapHookup::selectSsid() {
+    Serial.println("User selection detected");
     String hiddenPassword = server->arg("hiddenpassword");
     String hiddenSsid = server->arg("hiddenssid");
     int ssidNum = server->arg("ssid").toInt();
@@ -97,29 +116,14 @@ void SoftapHookup::selectSsid() {
     
     server->send(200, "text/html", s);
     if(useHiddenNetwork){
-      char * hssid;
-      char * hpassword;
-      hiddenSsid.toCharArray(hssid, 100);
-      hiddenPassword.toCharArray(hpassword, 100);
-      Serial.println("Connecting to network " + hiddenSsid + " with password " + hiddenPassword);
-      WiFi.begin(hssid, hpassword);            
+      hiddenSsid.toCharArray(remoteSsid, sizeof(remoteSsid));
+      hiddenPassword.toCharArray(remotePassword, sizeof(remotePassword));
     }
     else{
-      char * nhssid;
-      char * nhpassword;
-      WiFi.SSID(ssidNum).toCharArray(nhssid, 100);
-      password.toCharArray(nhpassword, 100);
-      Serial.println("Connecting to network " + WiFi.SSID(ssidNum));
-      WiFi.begin(nhssid, nhpassword);             
+      WiFi.SSID(ssidNum).toCharArray(remoteSsid, sizeof(remoteSsid));
+      password.toCharArray(remotePassword, sizeof(remotePassword));
     }
-    while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
-      Serial.print(".");
-    }
-    Serial.println("");
-    Serial.print("Connected! IP address: ");
-    Serial.println(WiFi.localIP());
-    currentMode = SH_MODE_CONNECTED;
+    currentMode = SH_MODE_CONNECTING;
 }
 
 void SoftapHookup::showNetworks() {
@@ -163,7 +167,7 @@ void SoftapHookup::showNetworks() {
 void SoftapHookup::scanForNetworks() {
     Serial.println("scan start");
 
-    WiFi.mode(WIFI_AP_STA);
+//    WiFi.mode(WIFI_AP_STA);
     WiFi.disconnect();
     delay(100);
 

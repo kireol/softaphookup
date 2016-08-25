@@ -21,11 +21,14 @@ protected:
     void refresh();
     String getHTMLHeader();
     String getHTMLFooter();
+    void connectToRemoteWifi();
 
     ESP8266WebServer *server;
 
-    char *softapssid;
-    char *softappassword;
+    char* softapssid;
+    char* softappassword;
+    char remoteSsid[32];
+    char remotePassword[32];
     int currentMode;
     int numberOfFoundNetworks;
 

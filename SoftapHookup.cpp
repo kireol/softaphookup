@@ -120,6 +120,7 @@ void SoftapHookup::connectToRemoteWifi() {
     saveToEeprom();
     currentMode = SH_MODE_CONNECTED;
     server->stop();
+    server->close();
 }
 
 void SoftapHookup::readFromEeprom() {
@@ -203,7 +204,7 @@ void SoftapHookup::softapServer() {
 }
 
 void SoftapHookup::setupSoftAp() {
-    Serial.println("in setup WiFi");
+    Serial.println("Starting SoftAP");
     String AP_NameString = String(softapssid);
 
     char AP_NameChar[AP_NameString.length() + 1];
@@ -220,6 +221,14 @@ void SoftapHookup::setupSoftAp() {
     server->on("/select", HTTP_POST, std::bind(&SoftapHookup::selectSsid, this));
 
     server->begin();
+
+    IPAddress myIP = WiFi.softAPIP();
+    Serial.print("SoftAP IP address: ");
+    Serial.println(myIP);
+    Serial.print("SoftAP SSID: ");
+    Serial.println(AP_NameChar);
+    Serial.print("SoftAP password: ");
+    Serial.println(softappassword);
 }
 
 void SoftapHookup::refresh() {

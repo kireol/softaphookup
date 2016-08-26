@@ -25,6 +25,7 @@ protected:
     void saveToEeprom();
     void checkForReset();
     void readFromEeprom();
+    void looper();
     void init();
 
     ESP8266WebServer *server;

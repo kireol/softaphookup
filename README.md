@@ -6,4 +6,24 @@ Hard coding the SSID and password in your IOT wifi device can be a thing of the 
 
 ##TODO:
 *Add connection led option   
-*Change debug mode for serial output to use #ifdef
+*Change debug mode for serial output to use #ifdef  
+*Remove .ino from source and check if it works in the arduino library dir 
+
+##Example useage
+```   
+#include "softapHookup.h"
+#include <ESP8266WebServer.h>
+
+ESP8266WebServer server(80);
+SoftapHookup softaphookup("mySoftapEsp8266", "mysoftappassword", &server);
+
+void setup() {
+  Serial.begin(115200);
+  softaphookup.start();
+}
+
+void loop() {
+// Your code here
+}
+```   
+

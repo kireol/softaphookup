@@ -15,6 +15,7 @@ SoftapHookup::SoftapHookup(char *defaultssid, char *password, ESP8266WebServer *
     softapssid = defaultssid;
     softappassword = password;
     server = inServer;
+    clearNetworkFromEepromPin = -1;
     init();
 }
 
@@ -32,7 +33,6 @@ void SoftapHookup::init() {
     numberOfFoundNetworks = 0;
     timeoutMillis = 10000;
     lastConnectAttemptFailed = false;  //load this from eeprom
-    clearNetworkFromEepromPin = -1;
     eepromStartingByte = 0;
     shouldWriteToEeprom = true;
 }
@@ -277,7 +277,7 @@ void SoftapHookup::showNetworks() {
         s += "no networks found";
     } else {
         if (lastConnectAttemptFailed == true) {
-            s += "<b>Last connection failed</b><br>";
+            s += "<font size=\"3\" color=\"red\">Last connection failed</font><br>";
         }
 
         s += "Select a network for <b>" +
@@ -354,3 +354,4 @@ void SoftapHookup::setShouldWriteEeprom(boolean shouldWrite) {
 void SoftapHookup::ignoreEeprom(boolean shouldIgnore) {
     shouldIgnoreEeprom = shouldIgnore;
 }
+

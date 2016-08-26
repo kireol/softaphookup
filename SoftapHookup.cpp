@@ -3,12 +3,13 @@
 #include <ESP8266WiFi.h>
 #include <EEPROM.h>
 
-//read from eeprom
 //method for reset pin setting
-//reset eeprom pin
 //eeprom offset method?
 //couldnt connect message from eeprom
 //connect led
+//looper
+//dont reset
+//allow to specify ip range
 
 SoftapHookup::SoftapHookup(char *defaultssid, char *password, ESP8266WebServer *inServer) {
     softapssid = defaultssid;
@@ -22,7 +23,15 @@ SoftapHookup::SoftapHookup(char *defaultssid, char *password, ESP8266WebServer *
 }
 
 SoftapHookup::SoftapHookup(char *defaultssid, char *password, ESP8266WebServer *inServer, int inClearNetworkFromEepromPin) {
-  SoftapHookup(defaultssid, password, inServer);
+//  SoftapHookup(defaultssid, password, inServer);
+    softapssid = defaultssid;
+    softappassword = password;
+    currentMode = SH_MODE_RESET_CHECK;
+    numberOfFoundNetworks = 0;
+    server = inServer;
+    timeoutMillis = 10000;
+    lastConnectAttemptFailed = false;  //load this from eeprom
+    clearNetworkFromEepromPin = -1;
   clearNetworkFromEepromPin = inClearNetworkFromEepromPin;
 }
 
@@ -58,14 +67,17 @@ void SoftapHookup::checkForReset(){
   currentMode = SH_MODE_EEPROM_CONNECT;
 
   if(  clearNetworkFromEepromPin == -1){
-    Serial.println("Skipping eeprom reset");
+    Serial.println("No reset pin specified.  Skipping eeprom reset");
     return;
   }
 
   pinMode(clearNetworkFromEepromPin, INPUT);
+
   if(digitalRead(clearNetworkFromEepromPin) == HIGH){
-  Serial.println("Clearing eeprom");
-      clearEeprom();
+    Serial.println("Pin detected.  Clearing eeprom");
+    clearEeprom();
+  }else{
+    Serial.println("Skipping eeprom clearing.  Pin not detected.");    
   }
 }
 
@@ -130,7 +142,7 @@ void SoftapHookup::readFromEeprom(){
 }
 
 void SoftapHookup::saveToEeprom(){
-    EEPROM.begin(512);
+  EEPROM.begin(512);
 
   clearEeprom();
   
@@ -156,6 +168,8 @@ void SoftapHookup::clearEeprom() {
 
   length += sizeof(remoteSsid);
   length += sizeof(remotePassword);
+
+//  EEPROM.begin(512);
 
   for (int i = 0; i < length; ++i) { 
     EEPROM.write(i, 0); 

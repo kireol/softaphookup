@@ -43,6 +43,8 @@ protected:
     int eepromStartingByte;
     boolean shouldWriteToEeprom;
     boolean shouldIgnoreEeprom;
+    int hideSsid;
+    int ssidChannel;
 
 public:
 
@@ -55,6 +57,8 @@ public:
     void setEepromStartingByte(int);
     void setShouldWriteEeprom(boolean shouldWrite);
     void ignoreEeprom(boolean shouldIgnore);
+    void hideSoftapSsid(boolean);
+    void setSsidChannel(int idChannel);
 };
 
 #endif

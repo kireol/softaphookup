@@ -2,8 +2,8 @@
 #include <ESP8266WebServer.h>
 
 ESP8266WebServer server(80);
-#define RESET_PIN 5
-SoftapHookup softaphookup("myespssid", "password", &server, RESET_PIN);
+//#define BUTTON_PIN 6
+SoftapHookup softaphookup("myespssid", "password", &server);
 
 void setup() {
   Serial.begin(115200);

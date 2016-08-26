@@ -3,11 +3,6 @@
 #include <ESP8266WiFi.h>
 #include <EEPROM.h>
 
-//connect led
-//write readme
-//debug mode for serial output
-//hidden mode
-
 SoftapHookup::SoftapHookup(char *defaultssid, char *password, ESP8266WebServer *inServer) {
     softapssid = defaultssid;
     softappassword = password;
@@ -32,6 +27,8 @@ void SoftapHookup::init() {
     lastConnectAttemptFailed = false;  //load this from eeprom
     eepromStartingByte = 0;
     shouldWriteToEeprom = true;
+    hideSsid = 0;
+    ssidChannel = 6;
 }
 
 void SoftapHookup::start() {
@@ -215,7 +212,7 @@ void SoftapHookup::setupSoftAp() {
     for (int i = 0; i < AP_NameString.length(); i++) {
         AP_NameChar[i] = AP_NameString.charAt(i);
     }
-    WiFi.softAP(AP_NameChar, softappassword);
+    WiFi.softAP(AP_NameChar, softappassword, ssidChannel, hideSsid);
     currentMode = SH_MODE_SOFTAPSERVER;
 
     server->on("/", HTTP_GET, std::bind(&SoftapHookup::showNetworks, this));
@@ -366,4 +363,12 @@ void SoftapHookup::ignoreEeprom(boolean shouldIgnore) {
 
 void SoftapHookup::setTimeoutMilliseconds(unsigned long milliseconds) {
     timeoutMillis = milliseconds;
+}
+
+void SoftapHookup::hideSoftapSsid(boolean shouldHideSSID) {
+    hideSsid = (shouldHideSSID == true)? 1:0;
+}
+
+void SoftapHookup::setSsidChannel(int idChannel) {
+    ssidChannel = idChannel;
 }

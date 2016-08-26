@@ -39,6 +39,8 @@ protected:
     boolean lastConnectAttemptFailed;
     int clearNetworkFromEepromPin;
     int eepromStartingByte;
+    boolean shouldWriteToEeprom;
+    boolean shouldIgnoreEeprom;
 
 public:
 
@@ -47,8 +49,10 @@ public:
 
     void start();
     void clearEeprom();
-    int getEepromSizeUsed();
+    int  getEepromSizeUsed();
     void setEepromStartingByte(int);
+    void setShouldWriteEeprom(boolean shouldWrite);
+    void ignoreEeprom(boolean shouldIgnore);
 };
 
 #endif

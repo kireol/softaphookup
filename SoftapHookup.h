@@ -15,7 +15,7 @@ class SoftapHookup {
 protected:
     void scanForNetworks();
     void softapServer();
-    void setupWiFi();
+    void setupSoftAp();
     void showNetworks();
     void selectSsid();
     void refresh();

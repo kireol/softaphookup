@@ -4,9 +4,9 @@
 #include <EEPROM.h>
 
 //connect led
-//turn off softap
 //write readme
 //debug mode for serial output
+//hidden mode
 
 SoftapHookup::SoftapHookup(char *defaultssid, char *password, ESP8266WebServer *inServer) {
     softapssid = defaultssid;
@@ -52,7 +52,7 @@ void SoftapHookup::looper() {
             scanForNetworks();
             break;
         case SH_MODE_SOFTAPSETUP:
-            setupWiFi();
+            setupSoftAp();
             break;
         case SH_MODE_SOFTAPSERVER:
             softapServer();
@@ -202,14 +202,8 @@ void SoftapHookup::softapServer() {
     server->handleClient();
 }
 
-void SoftapHookup::setupWiFi() {
+void SoftapHookup::setupSoftAp() {
     Serial.println("in setup WiFi");
-
-    uint8_t mac[WL_MAC_ADDR_LENGTH];
-    WiFi.softAPmacAddress(mac);
-    String macID = String(mac[WL_MAC_ADDR_LENGTH - 2], HEX) +
-                   String(mac[WL_MAC_ADDR_LENGTH - 1], HEX);
-    macID.toUpperCase();
     String AP_NameString = String(softapssid);
 
     char AP_NameChar[AP_NameString.length() + 1];
@@ -360,5 +354,5 @@ void SoftapHookup::ignoreEeprom(boolean shouldIgnore) {
 }
 
 void SoftapHookup::setTimeoutMilliseconds(unsigned long milliseconds) {
-    timeoutMillis = millis;
+    timeoutMillis = milliseconds;
 }

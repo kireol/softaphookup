@@ -8,7 +8,7 @@
 extern String queryString;
 
 enum currentMode {
-    SH_MODE_SCAN = 1, SH_MODE_SOFTAPSETUP = 2, SH_MODE_SOFTAPSERVER = 3, SH_MODE_CONNECTING = 4, SH_MODE_CONNECTED = 5
+    SH_MODE_RESET_CHECK = 1, SH_MODE_EEPROM_CONNECT = 2, SH_MODE_SCAN = 3, SH_MODE_SOFTAPSETUP = 4, SH_MODE_SOFTAPSERVER = 5, SH_MODE_CONNECTING = 6, SH_MODE_CONNECTED = 7
 };
 
 class SoftapHookup {
@@ -22,19 +22,27 @@ protected:
     String getHTMLHeader();
     String getHTMLFooter();
     void connectToRemoteWifi();
+    void clearEeprom();
+    void saveToEeprom();
+    void checkForReset();
+    void readFromEeprom();
 
     ESP8266WebServer *server;
 
     char* softapssid;
     char* softappassword;
-    char remoteSsid[32];
-    char remotePassword[32];
+    char remoteSsid[33];
+    char remotePassword[33];
     int currentMode;
     int numberOfFoundNetworks;
+    unsigned long timeoutMillis;
+    boolean lastConnectAttemptFailed;
+    int clearNetworkFromEepromPin;
 
 public:
 
     SoftapHookup(char *softapssid, char *password, ESP8266WebServer *server);
+    SoftapHookup(char *softapssid, char *password, ESP8266WebServer *server, int clearNetworkFromEepromPin);
 
     void start();
 };

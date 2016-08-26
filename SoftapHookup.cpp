@@ -1,17 +1,39 @@
 #include "SoftapHookup.h"
 
 #include <ESP8266WiFi.h>
+#include <EEPROM.h>
+
+//read from eeprom
+//method for reset pin setting
+//reset eeprom pin
+//eeprom offset method?
+//couldnt connect message from eeprom
+//connect led
 
 SoftapHookup::SoftapHookup(char *defaultssid, char *password, ESP8266WebServer *inServer) {
     softapssid = defaultssid;
     softappassword = password;
-    currentMode = SH_MODE_SCAN;
+    currentMode = SH_MODE_RESET_CHECK;
     numberOfFoundNetworks = 0;
     server = inServer;
+    timeoutMillis = 10000;
+    lastConnectAttemptFailed = false;  //load this from eeprom
+    clearNetworkFromEepromPin = -1;
+}
+
+SoftapHookup::SoftapHookup(char *defaultssid, char *password, ESP8266WebServer *inServer, int inClearNetworkFromEepromPin) {
+  SoftapHookup(defaultssid, password, inServer);
+  clearNetworkFromEepromPin = inClearNetworkFromEepromPin;
 }
 
 void SoftapHookup::start() {
     switch (currentMode) {
+        case SH_MODE_RESET_CHECK:
+            checkForReset();
+            break;
+        case SH_MODE_EEPROM_CONNECT:
+            readFromEeprom();
+            break;
         case SH_MODE_SCAN:
             scanForNetworks();
             break;
@@ -31,6 +53,22 @@ void SoftapHookup::start() {
     }
 }
 
+void SoftapHookup::checkForReset(){
+  Serial.println("Checking eeprom reset pin");
+  currentMode = SH_MODE_EEPROM_CONNECT;
+
+  if(  clearNetworkFromEepromPin == -1){
+    Serial.println("Skipping eeprom reset");
+    return;
+  }
+
+  pinMode(clearNetworkFromEepromPin, INPUT);
+  if(digitalRead(clearNetworkFromEepromPin) == HIGH){
+  Serial.println("Clearing eeprom");
+      clearEeprom();
+  }
+}
+
 void SoftapHookup::connectToRemoteWifi(){
   Serial.print("Connecting to network ");
   Serial.print( String(remoteSsid));
@@ -38,23 +76,99 @@ void SoftapHookup::connectToRemoteWifi(){
   Serial.print(String(remotePassword));
   Serial.println(".");
   WiFi.begin(remoteSsid, remotePassword);
+
+  unsigned long previousMillis = millis();
+  unsigned long currentMillis;
+  
   while (WiFi.status() != WL_CONNECTED) {
+    currentMillis = millis();
+    if((currentMillis - previousMillis) >= timeoutMillis){
+      Serial.println("Connection Timeout");
+      currentMode = SH_MODE_SCAN;
+      lastConnectAttemptFailed = true;  //write to eeprom here
+      ESP.reset();
+      return;
+    }
     delay(500);
     Serial.print(".");
   }
+  
   Serial.println("");
   Serial.print("Connected! IP address: ");
   Serial.println(WiFi.localIP());
+  saveToEeprom();
   currentMode = SH_MODE_CONNECTED;
 }
+
+void SoftapHookup::readFromEeprom(){
+  Serial.println("Checking Eeprom");
+  
+  EEPROM.begin(512);
+
+  for (int i = 0; i < sizeof(remoteSsid); ++i)
+  {
+    remoteSsid[i] = char(EEPROM.read(i));
+  }
+  Serial.print("SSID: ");
+  Serial.println(remoteSsid);
+  
+  Serial.println("Reading EEPROM pass");
+
+  for (int i = 0; i < sizeof(remotePassword); ++i)
+  {
+    remotePassword[i] = char(EEPROM.read(i + sizeof(remoteSsid)));
+  }
+  
+  Serial.print("Password: ");
+  Serial.println(remotePassword);
+
+  if(strlen(remoteSsid) > 0){
+    currentMode = SH_MODE_CONNECTING;
+  }else{
+    currentMode = SH_MODE_SCAN;
+  }
+}
+
+void SoftapHookup::saveToEeprom(){
+    EEPROM.begin(512);
+
+  clearEeprom();
+  
+  for (int i = 0; i < sizeof(remoteSsid); ++i)
+  {
+    EEPROM.write(i, remoteSsid[i]);
+    Serial.print("Wrote: ");
+    Serial.println(remoteSsid[i]); 
+  }
+
+
+  for (int i = 0; i < sizeof(remotePassword); ++i)
+  {
+    EEPROM.write(sizeof(remoteSsid)+i, remotePassword[i]);
+    Serial.print("Wrote: ");
+    Serial.println(remotePassword[i]); 
+  }    
+  EEPROM.commit();
+
+}
+void SoftapHookup::clearEeprom() {
+  int length = 0;
+
+  length += sizeof(remoteSsid);
+  length += sizeof(remotePassword);
+
+  for (int i = 0; i < length; ++i) { 
+    EEPROM.write(i, 0); 
+  }
+}
+
 
 void SoftapHookup::softapServer() {
     server->handleClient();
 }
 
 void SoftapHookup::setupWiFi() {
-    Serial.println("in setupWiFi");
-//    WiFi.mode(WIFI_AP_STA);
+    Serial.println("in setup WiFi");
 
     uint8_t mac[WL_MAC_ADDR_LENGTH];
     WiFi.softAPmacAddress(mac);
@@ -132,6 +246,10 @@ void SoftapHookup::showNetworks() {
     if (numberOfFoundNetworks == 0) {
         s += "no networks found";
     } else {
+        if(lastConnectAttemptFailed == true){
+          s += "<b>Last connection failed</b><br>";
+        }
+
         s += "Select a network for <b>" +
              String(softapssid) +
              "</b> to connect.  * denotes password protected network<br><br><form action=\"/select\" method=\"post\">";
@@ -166,8 +284,6 @@ void SoftapHookup::showNetworks() {
 
 void SoftapHookup::scanForNetworks() {
     Serial.println("scan start");
-
-//    WiFi.mode(WIFI_AP_STA);
     WiFi.disconnect();
     delay(100);
 

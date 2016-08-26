@@ -3,38 +3,38 @@
 #include <ESP8266WiFi.h>
 #include <EEPROM.h>
 
-//method for reset pin setting
 //eeprom offset method?
 //couldnt connect message from eeprom
 //connect led
 //looper
 //dont reset
 //allow to specify ip range
+//clean up eeprom . . . . repeats
 
 SoftapHookup::SoftapHookup(char *defaultssid, char *password, ESP8266WebServer *inServer) {
     softapssid = defaultssid;
     softappassword = password;
-    currentMode = SH_MODE_RESET_CHECK;
-    numberOfFoundNetworks = 0;
     server = inServer;
-    timeoutMillis = 10000;
-    lastConnectAttemptFailed = false;  //load this from eeprom
-    clearNetworkFromEepromPin = -1;
+    init();
 }
 
 SoftapHookup::SoftapHookup(char *defaultssid, char *password, ESP8266WebServer *inServer, int inClearNetworkFromEepromPin) {
-//  SoftapHookup(defaultssid, password, inServer);
     softapssid = defaultssid;
     softappassword = password;
+    server = inServer;
+    clearNetworkFromEepromPin = inClearNetworkFromEepromPin;
+    init();
+}
+
+void SoftapHookup::init(){
     currentMode = SH_MODE_RESET_CHECK;
     numberOfFoundNetworks = 0;
-    server = inServer;
     timeoutMillis = 10000;
     lastConnectAttemptFailed = false;  //load this from eeprom
     clearNetworkFromEepromPin = -1;
-  clearNetworkFromEepromPin = inClearNetworkFromEepromPin;
-}
+    eepromStartingByte = 0;
 
+}
 void SoftapHookup::start() {
     switch (currentMode) {
         case SH_MODE_RESET_CHECK:
@@ -87,7 +87,12 @@ void SoftapHookup::connectToRemoteWifi(){
   Serial.print(" with password ");
   Serial.print(String(remotePassword));
   Serial.println(".");
-  WiFi.begin(remoteSsid, remotePassword);
+
+  if(strlen(remotePassword) > 0){
+    WiFi.begin(remoteSsid, remotePassword);    
+  }else{
+    WiFi.begin(remoteSsid);    
+  }
 
   unsigned long previousMillis = millis();
   unsigned long currentMillis;
@@ -119,7 +124,7 @@ void SoftapHookup::readFromEeprom(){
 
   for (int i = 0; i < sizeof(remoteSsid); ++i)
   {
-    remoteSsid[i] = char(EEPROM.read(i));
+    remoteSsid[i] = char(EEPROM.read(eepromStartingByte + i));
   }
   Serial.print("SSID: ");
   Serial.println(remoteSsid);
@@ -128,7 +133,7 @@ void SoftapHookup::readFromEeprom(){
 
   for (int i = 0; i < sizeof(remotePassword); ++i)
   {
-    remotePassword[i] = char(EEPROM.read(i + sizeof(remoteSsid)));
+    remotePassword[i] = char(EEPROM.read(eepromStartingByte + sizeof(remoteSsid) + i));
   }
   
   Serial.print("Password: ");
@@ -148,7 +153,7 @@ void SoftapHookup::saveToEeprom(){
   
   for (int i = 0; i < sizeof(remoteSsid); ++i)
   {
-    EEPROM.write(i, remoteSsid[i]);
+    EEPROM.write(eepromStartingByte + i, remoteSsid[i]);
     Serial.print("Wrote: ");
     Serial.println(remoteSsid[i]); 
   }
@@ -156,7 +161,7 @@ void SoftapHookup::saveToEeprom(){
 
   for (int i = 0; i < sizeof(remotePassword); ++i)
   {
-    EEPROM.write(sizeof(remoteSsid)+i, remotePassword[i]);
+    EEPROM.write(eepromStartingByte + sizeof(remoteSsid) + i, remotePassword[i]);
     Serial.print("Wrote: ");
     Serial.println(remotePassword[i]); 
   }    
@@ -164,16 +169,15 @@ void SoftapHookup::saveToEeprom(){
 
 }
 void SoftapHookup::clearEeprom() {
-  int length = 0;
+  int length = getEepromSizeUsed();
 
-  length += sizeof(remoteSsid);
-  length += sizeof(remotePassword);
-
-//  EEPROM.begin(512);
+  EEPROM.begin(512);
 
   for (int i = 0; i < length; ++i) { 
-    EEPROM.write(i, 0); 
+    EEPROM.write(eepromStartingByte + i, 0); 
   }
+  EEPROM.commit();
+
 }
 
 
@@ -321,4 +325,12 @@ void SoftapHookup::scanForNetworks() {
     }
     Serial.println("");
     currentMode = SH_MODE_SOFTAPSETUP;
+}
+
+int SoftapHookup::getEepromSizeUsed(){
+  return sizeof(remoteSsid) + sizeof(remotePassword);
+}
+
+void  SoftapHookup::setEepromStartingByte(int startByte){
+  eepromStartingByte = startByte;
 }

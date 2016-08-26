@@ -22,10 +22,10 @@ protected:
     String getHTMLHeader();
     String getHTMLFooter();
     void connectToRemoteWifi();
-    void clearEeprom();
     void saveToEeprom();
     void checkForReset();
     void readFromEeprom();
+    void init();
 
     ESP8266WebServer *server;
 
@@ -38,6 +38,7 @@ protected:
     unsigned long timeoutMillis;
     boolean lastConnectAttemptFailed;
     int clearNetworkFromEepromPin;
+    int eepromStartingByte;
 
 public:
 
@@ -45,6 +46,9 @@ public:
     SoftapHookup(char *softapssid, char *password, ESP8266WebServer *server, int clearNetworkFromEepromPin);
 
     void start();
+    void clearEeprom();
+    int getEepromSizeUsed();
+    void setEepromStartingByte(int);
 };
 
 #endif

@@ -25,6 +25,7 @@ protected:
     void saveToEeprom();
     void checkForReset();
     void readFromEeprom();
+    void setTimeoutMilliseconds(unsigned long);
     void looper();
     void init();
 

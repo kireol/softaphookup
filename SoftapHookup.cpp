@@ -4,10 +4,9 @@
 #include <EEPROM.h>
 
 //connect led
-//looper
 //turn off softap
-//right readme
-//set timeout length
+//write readme
+//debug mode for serial output
 
 SoftapHookup::SoftapHookup(char *defaultssid, char *password, ESP8266WebServer *inServer) {
     softapssid = defaultssid;
@@ -120,6 +119,7 @@ void SoftapHookup::connectToRemoteWifi() {
     Serial.println(WiFi.localIP());
     saveToEeprom();
     currentMode = SH_MODE_CONNECTED;
+    server->stop();
 }
 
 void SoftapHookup::readFromEeprom() {
@@ -359,3 +359,6 @@ void SoftapHookup::ignoreEeprom(boolean shouldIgnore) {
     shouldIgnoreEeprom = shouldIgnore;
 }
 
+void SoftapHookup::setTimeoutMilliseconds(unsigned long milliseconds) {
+    timeoutMillis = millis;
+}

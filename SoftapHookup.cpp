@@ -119,8 +119,11 @@ void SoftapHookup::connectToRemoteWifi() {
     Serial.println(WiFi.localIP());
     saveToEeprom();
     currentMode = SH_MODE_CONNECTED;
+
+    Serial.println("Stopping server and shutting down SoftAP");
     server->stop();
     server->close();
+    WiFi.enableAP(false);
 }
 
 void SoftapHookup::readFromEeprom() {
@@ -196,7 +199,6 @@ void SoftapHookup::clearEeprom() {
         EEPROM.write(eepromStartingByte + i, 0);
     }
     EEPROM.commit();
-
 }
 
 void SoftapHookup::softapServer() {

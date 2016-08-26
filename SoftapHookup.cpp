@@ -104,8 +104,7 @@ void SoftapHookup::connectToRemoteWifi() {
         if ((currentMillis - previousMillis) >= timeoutMillis) {
             Serial.println("Connection Timeout");
             currentMode = SH_MODE_SCAN;
-            lastConnectAttemptFailed = true;  //write to eeprom here
-            ESP.reset();
+            lastConnectAttemptFailed = true;
             return;
         }
         delay(500);
@@ -249,7 +248,7 @@ void SoftapHookup::selectSsid() {
 
     s += getHTMLHeader();
 
-    if (hiddenSsid.length() > 0 && hiddenPassword.length() > 0) {
+    if (hiddenSsid.length() > 0) {
         useHiddenNetwork = true;
     }
 

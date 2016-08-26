@@ -3,13 +3,11 @@
 #include <ESP8266WiFi.h>
 #include <EEPROM.h>
 
-//couldnt connect message from eeprom
 //connect led
 //looper
-//dont reset
-//allow to specify ip range
 //turn off softap
-//allow ip range change
+//right readme
+//set timeout length
 
 SoftapHookup::SoftapHookup(char *defaultssid, char *password, ESP8266WebServer *inServer) {
     softapssid = defaultssid;
@@ -38,7 +36,13 @@ void SoftapHookup::init() {
 }
 
 void SoftapHookup::start() {
-    switch (currentMode) {
+  while(currentMode != SH_MODE_CONNECTED){
+    looper();
+  }
+}
+
+void SoftapHookup::looper() {
+  switch (currentMode) {
         case SH_MODE_RESET_CHECK:
             checkForReset();
             break;

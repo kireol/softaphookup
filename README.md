@@ -34,6 +34,9 @@ void loop() {
 ```   
 
 #Directions
+Run example.  Connect wifi enabled device(e.g. laptop) to soft access point of device.  Select the access point you would like your IOT device to connect to and hit submit.
+
+#SDK
 ```   
 SoftapHookup(char *softapssid, char *password, ESP8266WebServer *server);    
 ```   
